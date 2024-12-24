@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { getAllTodos } from '../api/todos';
+import { getAllTodos } from '../api/todosAPI';
 import TodoCart from '../components/TodoCart.vue';
 
 const isLoading = ref(true);

@@ -1,9 +1,14 @@
-import { useOffsetPagination } from '@vueuse/core';
+import { useOffsetPagination, useWindowScroll } from '@vueuse/core';
 import { ref } from 'vue';
 import { getPaginatedUsers } from '../../../api/usersAPI';
 
 const FIRST_PAGE = 1;
 const PAGE_SIZE = 10;
+
+const { y } = useWindowScroll();
+function scrollToTop() {
+  y.value = 0;
+}
 
 export function usePaginatedUsers() {
   const isLoading = ref(true);
@@ -32,6 +37,7 @@ export function usePaginatedUsers() {
     onPageSizeChange: loadUsers,
   });
   async function loadUsers() {
+    scrollToTop();
     // console.log('local', currentPage.value, currentPageSize.value);
     const qParams = { skip: (currentPage.value - 1) * currentPageSize.value, limit: currentPageSize.value };
     const res = await getPaginatedUsers(qParams);

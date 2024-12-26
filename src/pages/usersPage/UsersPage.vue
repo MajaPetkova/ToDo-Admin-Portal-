@@ -1,41 +1,62 @@
 <script setup>
-import UsersTable from './components/usersTable.vue';
-import { usePaginatedUsers } from './composables/usePaginatedUsers';
+import { useWindowScroll } from '@vueuse/core';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { getPaginatedUsers } from '../../api/usersAPI';
 
-const { isLoading, users, currentPage, pageCount, isFirstPage, isLastPage, prev, next } = usePaginatedUsers();
+import AppPagination from './components/AppPagination.vue';
+import UsersTable from './components/UsersTable.vue';
+
+const route = useRoute();
+const { y } = useWindowScroll();
+function scrollToTop() {
+  y.value = 0;
+}
+
+const isLoading = ref(true);
+const users = ref([]);
+const total = ref(0);
+
+async function loadData() {
+  const page = Number(route.query.page ?? 1);
+  const size = Number(route.query.size ?? 10);
+
+  const qParams = {
+    skip: (page - 1) * size,
+    limit: size,
+  };
+  const res = await getPaginatedUsers(qParams);
+
+  users.value = res.users;
+  total.value = res.total;
+  isLoading.value = false;
+}
+
+watch(() => route.query, () => {
+  scrollToTop();
+  loadData();
+}, {
+  deep: true,
+  immediate: true,
+});
 </script>
 
 <template>
   <article class="usersPage">
-    <h1>All Users</h1>
-    <UsersTable :is-loading="isLoading" :users="users" />
-    <div class="pagination">
-      <button :disabled="isFirstPage" @click="prev">
-        Prev
-      </button>
-      <button v-for="page in pageCount" :key="`page-${page}`" :disabled="currentPage === page" @click="currentPage = page">
-        {{ page }}
-      </button>
+    <h1>All users</h1>
 
-      <button :disabled="isLastPage" @click="next">
-        Next
-      </button>
-    </div>
+    <UsersTable :is-loading="isLoading" :users="users" />
+
+    <AppPagination :total="total" />
   </article>
 </template>
 
-<style>
+<style scoped>
 .usersPage{
-max-width: calc(1200px + 2 * 1rem);
-margin:1rem auto;
-padding: 1rem;
-display: grid;
-gap:1rem;
-font-size: small;
-}
-.pagination{
-  display: flex;
-  flex-wrap: wrap;
-  gap:0.25rem
+  max-width: calc(1200px + 2 * 1rem);
+  margin: 1rem auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
 }
 </style>

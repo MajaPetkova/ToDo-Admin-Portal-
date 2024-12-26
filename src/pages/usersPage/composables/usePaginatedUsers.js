@@ -19,12 +19,6 @@ export function usePaginatedUsers() {
   const users = ref([]);
   const total = ref(0);
 
-  //   const pageMeta = ref({
-  //     limit: 10,
-  //     skip: 0,
-  //     total: 0,
-  //   });
-
   const {
     currentPage,
     currentPageSize,
@@ -37,8 +31,8 @@ export function usePaginatedUsers() {
     total,
     page: FIRST_PAGE,
     pageSize: PAGE_SIZE,
-    onPageChange: loadUsers,
-    onPageSizeChange: loadUsers,
+    onPageChange: () => loadUsers(false),
+    onPageSizeChange: () => loadUsers(false),
   });
 
   const trackPaginationInUrl = (qParams) => {
@@ -47,17 +41,20 @@ export function usePaginatedUsers() {
       ...qParams,
     } });
   };
-  async function loadUsers() {
-    scrollToTop();
+  async function loadUsers(initialLoad) {
+    const page = initialLoad ? (Number(route.query.page) ?? FIRST_PAGE) : currentPage.value;
+    const size = initialLoad ? (Number(route.query.size) ?? PAGE_SIZE) : currentPageSize.value;
     // console.log('local', currentPage.value, currentPageSize.value);
-    const qParams = { skip: (currentPage.value - 1) * currentPageSize.value, limit: currentPageSize.value };
-    trackPaginationInUrl(qParams);
+    const qParams = { skip: (page - 1) * size, limit: size };
+
+    scrollToTop();
+    trackPaginationInUrl({ page, size });
     const res = await getPaginatedUsers(qParams);
     // console.log(res);
     users.value = res.users;
     total.value = res.total;
     isLoading.value = false;
   }
-  loadUsers();
+  loadUsers(true);
   return { isLoading, users, currentPage, currentPageSize, pageCount, isFirstPage, isLastPage, prev, next, loadUsers };
 }
